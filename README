@@ -1,0 +1,16 @@
+ldap2config
+===========
+
+The purpose of this script is to generate configuration files with LDAP entries.
+
+It works using two more configuration files :
+- The main configuration file : an ini form configuration containing
+                                informations about the LDAP server, the file
+                                which will be created, logging, etc.
+                                See example.ini
+- A template file : Your configuraiton template. See example.tpl
+
+Invocation
+==========
+
+   $ python configuration.ini
