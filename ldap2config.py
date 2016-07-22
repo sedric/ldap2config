@@ -20,7 +20,7 @@ def main():
     conffd = ConfigParser.ConfigParser()
     conffd.read(configfile)
   except IndexError:
-    log.error("Usage: " + sys.argv[0] + " /path/to/config.ini")
+    print("Usage: " + sys.argv[0] + " /path/to/config.ini")
     sys.exit(1)
 
   confcfg, ldapcfg, searchcfg, defvalues, conflog = config_as_dicts(conffd)
