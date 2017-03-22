@@ -14,3 +14,10 @@ Invocation
 ==========
 
    $ python configuration.ini
+
+Known Bugs
+==========
+
+- We cannot indicate what to do if a value is empty and we want it.
+- default_values are case insensitive, but ldap entries are not, causing the
+  replacement never happen
