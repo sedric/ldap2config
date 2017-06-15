@@ -52,6 +52,7 @@ def config_as_dicts(config):
 
   confcfg['cfgfile']   = config.get("config", "cfgfile")
   confcfg['owner']     = config.get("config", "owner")
+  confcfg['group']     = config.get("config", "group")
   confcfg['mode']      = config.get("config", "mode")
   # octal, octal, octal...
   if (sys.version_info < (2, 8)):
@@ -158,6 +159,11 @@ def write_in_config_file(datas, confcfg, defvalues, attrs):
   except KeyError:
     logging.error("No user '" + confcfg['owner'] + "' found")
     sys.exit(1)
+  try:
+    gid    = getpwnam(confcfg['group']).pw_gid
+  except KeyError:
+    logging.error("No user '" + confcfg['group'] + "' found, use default one")
+    gid    = -1
 
   # Check if tempfile does not already exist and try to remove it
   try:
@@ -170,7 +176,7 @@ def write_in_config_file(datas, confcfg, defvalues, attrs):
   # Write datas on tempfile and set permissions
   with open(tempfile, 'w') as output:
     os.fchmod(output.fileno(), confcfg['mode'])
-    os.fchown(output.fileno(), uid, -1)
+    os.fchown(output.fileno(), uid, gid)
     for data in datas:
       lines = gen_conf_from_template(data,
                                      confcfg['template'],
