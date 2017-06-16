@@ -186,7 +186,7 @@ def write_in_config_file(datas, confcfg, defvalues, attrs):
       output.write(lines)
 
   # Move tempfile to it permanent location
-  subprocess.call(['ls', "-l", tempfile])
+  #subprocess.call(['ls', "-l", tempfile])
   subprocess.call(['mv', tempfile, confcfg['cfgfile']])
 
 # Get a value from defaults for a given attribute
