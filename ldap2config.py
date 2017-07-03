@@ -7,6 +7,7 @@ import random
 import subprocess
 import os, sys
 import logging
+import hashlib
 from pwd import getpwnam
 
 if (sys.version_info < (2, 8)):
@@ -63,6 +64,7 @@ def config_as_dicts(config):
     confcfg['mode'] = eval(confcfg['mode'])
   confcfg['template']  = config.get("config", "template")
   confcfg['separator'] = config.get("config", "tpl_separator")
+  confcfg['on_change'] = config.get("config", "on_change")
 
   conflog['level']      = config.get("log", "level")
 
@@ -187,7 +189,38 @@ def write_in_config_file(datas, confcfg, defvalues, attrs):
 
   # Move tempfile to it permanent location
   #subprocess.call(['ls', "-l", tempfile])
-  subprocess.call(['mv', tempfile, confcfg['cfgfile']])
+  move_if_need(tempfile,  confcfg['cfgfile'], confcfg['on_change'])
+
+def md5(fname):
+  hash_md5 = hashlib.md5()
+  with open(fname, "rb") as f:
+    for chunk in iter(lambda: f.read(4096), b""):
+      hash_md5.update(chunk)
+      return hash_md5.hexdigest()
+
+def move_if_need(source, destination, action):
+
+  try:
+    os.path.isfile(destination)
+    logging.debug("Calculating MD5 hashes")
+    md5source = md5(source)
+    md5dest   = md5(destination)
+
+    if ( md5source == md5dest ):
+      logging.debug("MD5 match. Doing nothing")
+      return False
+    else:
+      logging.debug("MD5 mismatch, changing configuration")
+  except IOError:
+    logging.debug("File " + source + " does not exists yet, creating it !")
+
+  subprocess.call(['mv', source, destination])
+  logging.debug("Executing : " + action)
+  try:
+    subprocess.call(action.split(' '))
+  except OSError:
+    logging.error("Cannot execute")
+    sys.exit(2)
 
 # Get a value from defaults for a given attribute
 # Recursively check for links if value contain separator at the begining and the
