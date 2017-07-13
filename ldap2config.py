@@ -196,7 +196,7 @@ def md5(fname):
   with open(fname, "rb") as f:
     for chunk in iter(lambda: f.read(4096), b""):
       hash_md5.update(chunk)
-      return hash_md5.hexdigest()
+  return hash_md5.hexdigest()
 
 def move_if_need(source, destination, action):
 
