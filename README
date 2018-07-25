@@ -13,7 +13,7 @@ It works using two more configuration files :
 Invocation
 ==========
 
-   $ python configuration.ini
+   $ ldap2config.py configuration.ini
 
 Known Bugs
 ==========
