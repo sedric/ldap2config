@@ -74,21 +74,13 @@ def config_as_dicts(config):
   return confcfg, ldapcfg, searchcfg, conflog
 
 
-def items_as_dict(items):
-  args = {}
-
-  for item in items:
-    key = item[0]
-    args[key] = item[1]
-  return args
-
-
 # Take a file as argument and return it content as a Jinja2Obj
 def import_template(template):
   loader = jinja2.FileSystemLoader(os.path.dirname(template))
   env = jinja2.Environment(loader=loader)
   tpl = env.get_template(os.path.basename(template))
   return tpl
+
 
 # Remove DN, add missingg
 def sanitize_ldap_datas(datas, attrs):
@@ -177,6 +169,7 @@ def write_in_config_file(datas, confcfg, attrs):
   move_if_need(tempfile,  confcfg['cfgfile'], confcfg['on_change'])
 
 
+# Calculate md5 sum of a file
 def md5(fname):
   hash_md5 = hashlib.md5()
   with open(fname, "rb") as f:
@@ -185,8 +178,8 @@ def md5(fname):
   return hash_md5.hexdigest()
 
 
+# Move on md5 mismatch or delete temporary file
 def move_if_need(source, destination, action):
-
   try:
     os.path.isfile(destination)
     logging.debug("Calculating MD5 hashes")
