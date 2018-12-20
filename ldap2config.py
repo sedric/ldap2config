@@ -20,6 +20,7 @@ elif sys.version_info > (3, 0):
 
 
 def main():
+  datas = {}
   try:
     configfile = sys.argv[1]
     conffd = ConfigParser.ConfigParser()
@@ -33,9 +34,10 @@ def main():
 
   logging.basicConfig(format='%(levelname)s: in %(funcName)s %(message)s',
                       level=conflog['level'])
-  datas = get_datas_from_ldap(ldapcfg, searchcfg)
-  logging.debug("LDAP extract : " + str(datas))
-  write_in_config_file(datas, confcfg, searchcfg['attrs'])
+  for search in confcfg['searches']:
+    datas[search] = get_datas_from_ldap(ldapcfg, searchcfg[search])
+    logging.debug("LDAP extract for " + str(search) + " : " + str(datas[search]))
+  write_in_config_file(datas, confcfg)
 
 
 # Return configuration as multiple dicts (hardcoded to raise config errors)
@@ -49,11 +51,7 @@ def config_as_dicts(config):
   ldapcfg['pass']      = config.get("ldap", "pass")
   ldapcfg['host']      = config.get("ldap", "host")
   ldapcfg['port']      = config.get("ldap", "port")
-
-  searchcfg['base'  ]  = config.get("search", "base")
-  searchcfg['scope' ]  = eval(config.get("search", "scope"))
-  searchcfg['filter']  = config.get("search", "filter")
-  searchcfg['attrs' ]  = list(config.get("search", "attrs").split(' '))
+  confcfg['searches']  = list(config.get("ldap", "searches").split(' '))
 
   confcfg['cfgfile']   = config.get("config", "cfgfile")
   confcfg['owner'  ]   = config.get("config", "owner")
@@ -70,6 +68,13 @@ def config_as_dicts(config):
   confcfg['on_change'] = config.get("config", "on_change")
 
   conflog['level']     = config.get("log", "level")
+
+  for search in confcfg['searches']:
+    searchcfg[search] = {}
+    searchcfg[search]['base'  ] = config.get(search, "base")
+    searchcfg[search]['scope' ] = eval(config.get(search, "scope"))
+    searchcfg[search]['filter'] = config.get(search, "filter")
+    searchcfg[search]['attrs' ] = list(config.get(search, "attrs").split(' '))
 
   return confcfg, ldapcfg, searchcfg, conflog
 
@@ -132,7 +137,7 @@ def get_datas_from_ldap(ldapcfg, searchcfg):
 
 # Write datas in a temporary file then move it to cfgfile
 # This avoid moving an half-empty credential file and losing users
-def write_in_config_file(datas, confcfg, attrs):
+def write_in_config_file(datas, confcfg):
   if (sys.version_info < (2, 8)):
     maxint = sys.maxint
   elif (sys.version_info > (3,0)):
@@ -162,7 +167,7 @@ def write_in_config_file(datas, confcfg, attrs):
   with open(tempfile, 'w') as output:
     os.fchmod(output.fileno(), confcfg['mode'])
     os.fchown(output.fileno(), uid, gid)
-    output.write(confcfg['template'].render(items=datas))
+    output.write(confcfg['template'].render(datas))
 
   # Move tempfile to it permanent location
   #subprocess.call(['ls', "-l", tempfile])
