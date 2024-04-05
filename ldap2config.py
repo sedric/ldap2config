@@ -7,6 +7,7 @@ import random
 import subprocess
 import os
 import sys
+import importlib
 import logging
 import hashlib
 import jinja2
@@ -30,7 +31,7 @@ def main():
     sys.exit(1)
 
   confcfg, ldapcfg, searchcfg, conflog = config_as_dicts(conffd)
-  confcfg['template'] = import_template(confcfg['template']) # str => Jinja2Object
+  confcfg['template'] = import_template(confcfg['template'], confcfg['filters']) # str => Jinja2Object
 
   logging.basicConfig(format='%(levelname)s: in %(funcName)s %(message)s',
                       level=conflog['level'])
@@ -66,6 +67,7 @@ def config_as_dicts(config):
     confcfg['mode']    = eval(confcfg['mode'])
   confcfg['template' ] = config.get("config", "template")
   confcfg['on_change'] = config.get("config", "on_change")
+  confcfg['filters']   = config.get("config", "filters")
 
   conflog['level']     = config.get("log", "level")
 
@@ -80,10 +82,26 @@ def config_as_dicts(config):
 
 
 # Take a file as argument and return it content as a Jinja2Obj
-def import_template(template):
+def import_template(template, filterfile):
+  if os.path.exists(filterfile) and os.path.isfile(filterfile):
+    logging.debug("Loading filters from " + filterfile)
+    sys.path.insert(1, os.path.dirname(filterfile))
+    # import: /path/to/my.file.py as my.file, named CustomFilter
+    modulename = os.path.basename(".".join(filterfile.split(".")[0:-1]))
+    CustomFilter = importlib.import_module(modulename)
+  else:
+    logging.info(filterfile + " is not a file or not loadable : not trying")
+
   loader = jinja2.FileSystemLoader(os.path.dirname(template))
   env = jinja2.Environment(loader=loader)
+  if type(CustomFilter.Filters) is type(dict()):
+    logging.debug("Apply filter")
+    for i in CustomFilter.Filters:
+      env.filters[i] = CustomFilter.Filters[i]
+  else:
+    logging.debug("Filter not applyed")
   tpl = env.get_template(os.path.basename(template))
+
   return tpl
 
 
